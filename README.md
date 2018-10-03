@@ -1,2 +1,3 @@
-# face-gan
-Face Generation using Generative Adversarial Networks
+# faceGAN
+
+Face Generation using Generative Adversarial Networks.
