@@ -15,24 +15,15 @@ Project: https://github.com/pskrunner14/faceGAN
 
 import tensorflow as tf
 
-class FaceGAN():
-
-    def __init__(self):
-        pass
-
-class Generator():
-
-    def __init__(self):
-        self.__EMB_SIZE = 256
-        self.out = self.__create_model()
-
-    def __create_model(self):
+def create_generator(EMB_SIZE=256):
         
-        noise = tf.placeholder(dtype=tf.float32, shape=[None, self.__EMB_SIZE], name='noise')
-        keep_prob = tf.placeholder(dtype=tf.float32, name='keep_prob_gen')
+    with tf.variable_scope('generator') as global_scope:
+
+        noise = tf.placeholder(dtype=tf.float32, shape=[None, EMB_SIZE], name='noise')
+        # keep_prob = tf.placeholder(dtype=tf.float32, name='keep_prob_gen')
 
         with tf.variable_scope('dense_1') as scope:
-            weights = tf.get_variable('weights', shape=[self.__EMB_SIZE, 10 * 8 * 8], 
+            weights = tf.get_variable('weights', shape=[EMB_SIZE, 10 * 8 * 8], 
                                     initializer=tf.random_uniform_initializer(), 
                                     dtype=tf.float32)
             bias = tf.get_variable('bias', shape=[10 * 8 * 8], 
@@ -135,17 +126,68 @@ class Generator():
                                     initializer=tf.constant_initializer(0.0), 
                                     dtype=tf.float32)
             conv = tf.nn.conv2d(deconv_5, filter=kernel, 
+                                strides=[1, 1, 1, 1],
+                                padding='SAME')
+            generator = tf.add(conv, bias, name=global_scope.name)
+
+    return generator
+
+def create_discriminator(IMAGE_SIZE):
+        
+    with tf.variable_scope('discriminator') as global_scope:
+
+        image_data = tf.placeholder(dtype=tf.float32, shape=[None, ] + list(IMAGE_SIZE), name='image_data')
+        # keep_prob = tf.placeholder(dtype=tf.float32, name='keep_prob_disc')
+
+        with tf.variable_scope('conv_1') as scope:
+            kernel = tf.get_variable('kernel', shape=[3, 3, 3, 32], 
+                                    initializer=tf.random_uniform_initializer(), 
+                                    dtype=tf.float32)
+            bias = tf.get_variable('bias', shape=[32],
+                                    initializer=tf.constant_initializer(0.0), 
+                                    dtype=tf.float32)
+            conv = tf.nn.conv2d(image_data, filter=kernel, 
                                 strides=[1, 1, 1, 1], 
                                 padding='SAME')
-            out = tf.add(conv, bias, name='out')
+            conv = tf.add(conv, bias)
+            l_relu = tf.nn.leaky_relu(conv)
+            conv_1 = tf.layers.average_pooling2d(l_relu, pool_size=[2, 2], strides=[1, 1, 1, 1], name=scope.name)
 
-        return out
+        with tf.variable_scope('conv_2') as scope:
+            kernel = tf.get_variable('kernel', shape=[3, 3, 32, 32], 
+                                    initializer=tf.random_uniform_initializer(), 
+                                    dtype=tf.float32)
+            bias = tf.get_variable('bias', shape=[32],
+                                    initializer=tf.constant_initializer(0.0), 
+                                    dtype=tf.float32)
+            conv = tf.nn.conv2d(conv_1, filter=kernel, 
+                                strides=[1, 2, 2, 1], 
+                                padding='SAME')
+            conv = tf.add(conv, bias)
+            l_relu = tf.nn.leaky_relu(conv)
+            conv_2 = tf.layers.average_pooling2d(l_relu, pool_size=[2, 2], strides=[1, 1, 1, 1], name=scope.name)
 
-class Discriminator():
+        with tf.variable_scope('logits') as scope:
+            batch_size = conv_2.get_shape().as_list()[0]
+            flattened = tf.reshape(conv_2, [batch_size, -1])
+            size = flattened.get_shape().as_list()[1]
+            weights = tf.get_variable('weights', shape=[size, 256], 
+                                    initializer=tf.random_uniform_initializer(), 
+                                    dtype=tf.float32)
+            bias = tf.get_variable('bias', shape=[256], 
+                                    initializer=tf.constant_initializer(0.0), 
+                                    dtype=tf.float32)
+            dense_1 = tf.add(tf.matmul(flattened, weights), bias)
+            bn = tf.layers.batch_normalization(dense_1)
+            l_relu = tf.nn.leaky_relu(bn, alpha=0.2, name=scope.name)
+            weights = tf.get_variable('weights', shape=[256, 1], 
+                                    initializer=tf.random_uniform_initializer(), 
+                                    dtype=tf.float32)
+            bias = tf.get_variable('bias', shape=[1], 
+                                    initializer=tf.constant_initializer(0.0), 
+                                    dtype=tf.float32)
+            dense_2 = tf.add(tf.matmul(l_relu, weights), bias)
+            logits = tf.nn.sigmoid(dense_2, name=global_scope.name)
 
-    def __init__(self):
-        self.__IMAGE_SIZE = (36, 36, 3)
-        self.out = self.__create_model()
-    
-    def __create_model(self):
-        pass
+    return logits
+            
