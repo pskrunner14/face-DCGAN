@@ -44,14 +44,18 @@ def train():
 
     for epoch in range(num_epochs):
         for X_batch in tqdm(iterate_minibatches(X, batch_size, shuffle=True), 
-                            total=(X.shape[0] // batch_size) + 1, 
-                            desc='Epoch[{}/{}]'.format(epoch, num_epochs)):
+                            total=X.shape[0] // batch_size, desc='Epoch[{}/{}]'
+                            .format(epoch, num_epochs), leave=False):
             feed_dict = {
                 real_data: X_batch,
                 noise: sample_noise_batch(batch_size)
             }
             sess.run([d_train_step], feed_dict=feed_dict)
             sess.run([g_train_step], feed_dict=feed_dict)
+        
+        g_loss_iter = np.mean(sess.run([g_loss], feed_dict=feed_dict)[0])
+        d_loss_iter = np.mean(sess.run([d_loss], feed_dict=feed_dict)[0])
+        logging.info('Epoch[{}/{}]    g_loss: {:.6f}   -   d_loss: {:.6f}'.format(epoch, num_epochs, g_loss_iter, d_loss_iter))
 
     sess.close()
 

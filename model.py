@@ -17,49 +17,66 @@ import tensorflow as tf
 
 def create_generator(input_noise):
     
-    with tf.variable_scope('generator') as global_scope:
+    with tf.variable_scope('generator', reuse=tf.AUTO_REUSE) as global_scope:
         
         emb_size = input_noise.get_shape().as_list()[-1]
+        dense_1_shape = [8, 8, 10]
+        dense_1_flat = np.prod(dense_1_shape)
 
         with tf.variable_scope('dense_1') as scope:
-            weights = tf.get_variable('weights', shape=[emb_size, 10 * 8 * 8], 
+            weights = tf.get_variable('weights', shape=[emb_size, dense_1_flat], 
                                     initializer=tf.random_uniform_initializer(), 
                                     dtype=tf.float32)
-            bias = tf.get_variable('bias', shape=[10 * 8 * 8], 
+            bias = tf.get_variable('bias', shape=[dense_1_flat], 
                                     initializer=tf.constant_initializer(0.0), 
                                     dtype=tf.float32)
             dense = tf.add(tf.matmul(input_noise, weights), bias)
             bn = tf.layers.batch_normalization(dense)
             dense_1 = tf.nn.leaky_relu(bn, alpha=0.2, name=scope.name)
 
-        dense_1_reshaped = tf.reshape(dense_1, shape=[-1, 8, 8, 10], name='dense_1_reshaped')
+        dense_1_reshaped = tf.reshape(dense_1, shape=[-1, ] + dense_1_shape, name='dense_1_reshaped')
 
         with tf.variable_scope('deconv_1') as scope:
-            kernel = tf.get_variable('kernel', shape=[5, 5, 64, 10], 
+            """
+            Using `tf.layers.conv2d_transpose due to `
+            """
+            stride = 1
+            kernel_dim = 5
+            in_channels = dense_1_shape[-1]
+            out_channels = 64
+            kernel = tf.get_variable('kernel', shape=[kernel_dim, kernel_dim, out_channels, in_channels], 
                                     initializer=tf.random_uniform_initializer(), 
                                     dtype=tf.float32)
             bias = tf.get_variable('bias', shape=[64],
                                     initializer=tf.constant_initializer(0.0), 
                                     dtype=tf.float32)
-            _, input_H, input_W, _ = dense_1_reshaped.get_shape().as_list()
+            input_dim = dense_1_reshaped.get_shape().as_list()[1]
+            out_dim = input_dim * stride + kernel_dim - stride
+            deconv_shape = tf.stack([tf.shape(input_noise)[0], out_dim, out_dim, out_channels])
             deconv = tf.nn.conv2d_transpose(dense_1_reshaped, filter=kernel, 
-                                            output_shape=[-1, input_H + 4, input_W + 4, 64],
-                                            strides=[1, 1, 1, 1], padding='VALID')
+                                            output_shape=deconv_shape,
+                                            strides=[1, stride, stride, 1], padding='VALID')
             deconv = tf.add(deconv, bias)
             bn = tf.layers.batch_normalization(deconv)
             deconv_1 = tf.nn.leaky_relu(bn, alpha=0.2, name=scope.name)
 
         with tf.variable_scope('deconv_2') as scope:
-            kernel = tf.get_variable('kernel', shape=[5, 5, 64, 64], 
+            stride = 1
+            kernel_dim = 5
+            in_channels = 64
+            out_channels = 64
+            kernel = tf.get_variable('kernel', shape=[kernel_dim, kernel_dim, out_channels, in_channels], 
                                     initializer=tf.random_uniform_initializer(), 
                                     dtype=tf.float32)
             bias = tf.get_variable('bias', shape=[64],
                                     initializer=tf.constant_initializer(0.0), 
                                     dtype=tf.float32)
-            _, input_H, input_W, _ = deconv_1.get_shape().as_list()
+            input_dim = deconv_1.get_shape().as_list()[1]
+            out_dim = input_dim * stride + kernel_dim - stride
+            deconv_shape = tf.stack([tf.shape(input_noise)[0], out_dim, out_dim, out_channels])
             deconv = tf.nn.conv2d_transpose(deconv_1, filter=kernel, 
-                                            output_shape=[-1, input_H + 4, input_W + 4, 64],
-                                            strides=[1, 1, 1, 1], padding='VALID')
+                                            output_shape=deconv_shape,
+                                            strides=[1, stride, stride, 1], padding='VALID')
             deconv = tf.add(deconv, bias)
             bn = tf.layers.batch_normalization(deconv)
             deconv_2 = tf.nn.leaky_relu(bn, alpha=0.2, name=scope.name)
@@ -68,22 +85,27 @@ def create_generator(input_noise):
         upsampled_deconv_2 = tf.image.resize_nearest_neighbor(deconv_2, (2 * H, 2 * W), 
                                                                 name='upsampled_deconv_2')
 
-        with tf.variable_scope('deconv_3') as scope:
-            kernel = tf.get_variable('kernel', shape=[7, 7, 3, 64], 
+        with tf.variable_scope('logits') as scope:
+            stride = 1
+            kernel_dim = 5
+            in_channels = 64
+            out_channels = 3
+            kernel = tf.get_variable('kernel', shape=[kernel_dim, kernel_dim, out_channels, in_channels], 
                                     initializer=tf.random_uniform_initializer(), 
                                     dtype=tf.float32)
             bias = tf.get_variable('bias', shape=[3],
                                     initializer=tf.constant_initializer(0.0), 
                                     dtype=tf.float32)
-            _, input_H, input_W, _ = upsampled_deconv_2.get_shape().as_list()
+            input_dim = upsampled_deconv_2.get_shape().as_list()[1]
+            out_dim = input_dim * stride + kernel_dim - stride
+            deconv_shape = tf.stack([tf.shape(input_noise)[0], out_dim, out_dim, out_channels])
             deconv = tf.nn.conv2d_transpose(upsampled_deconv_2, filter=kernel, 
-                                            output_shape=[-1, input_H + 4, input_W + 4, 3],
-                                            strides=[1, 1, 1, 1], padding='VALID')
+                                            output_shape=deconv_shape,
+                                            strides=[1, stride, stride, 1], padding='VALID')
             deconv = tf.add(deconv, bias)
-            deconv_3 = tf.layers.batch_normalization(deconv, name=global_scope.name)
+            logits = tf.layers.batch_normalization(deconv, name=global_scope.name)
             
-        logits = deconv_3
-        out = tf.nn.tanh(deconv_3, name='out')
+        out = tf.nn.tanh(logits, name='out')
 
         # with tf.variable_scope('deconv_4') as scope:
         #     kernel = tf.get_variable('kernel', shape=[3, 3, 10, 32], 
@@ -131,7 +153,7 @@ def create_generator(input_noise):
 
 def create_discriminator(image_data):
 
-    with tf.variable_scope('discriminator') as global_scope:
+    with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE) as global_scope:
 
         with tf.variable_scope('conv_1') as scope:
             kernel = tf.get_variable('kernel', shape=[3, 3, 3, 32], 
@@ -163,7 +185,7 @@ def create_discriminator(image_data):
             conv_2 = tf.layers.average_pooling2d(l_relu, pool_size=[2, 2], 
                                                 strides=(1, 1), name=scope.name)
 
-        with tf.variable_scope('dense') as scope:
+        with tf.variable_scope('logits') as scope:
             dim = np.prod(conv_2.get_shape().as_list()[1: ])
             flattened = tf.reshape(conv_2, [-1, dim])
             weights = tf.get_variable('weights_1', shape=[dim, 256], 
@@ -181,10 +203,9 @@ def create_discriminator(image_data):
             bias = tf.get_variable('bias_2', shape=[1], 
                                     initializer=tf.constant_initializer(0.0), 
                                     dtype=tf.float32)
-            dense = tf.add(tf.matmul(l_relu, weights), bias, name=scope.name)
+            logits = tf.add(tf.matmul(l_relu, weights), bias, name=scope.name)
             
-        logits = dense
-        out = tf.nn.sigmoid(dense, name=global_scope.name)
+        out = tf.nn.sigmoid(logits, name=global_scope.name)
 
     return out, logits
             
