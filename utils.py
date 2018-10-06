@@ -2,15 +2,15 @@ import os
 
 import cv2
 import numpy as np
-import pandas as pd
 
 from tqdm import tqdm
 
-IMAGES_DIR = "datasets/lfw-deepfunneled"            # http://vis-www.cs.umass.edu/lfw/lfw-deepfunneled.tgz
+IMAGES_DIR = "datasets/lfw-deepfunneled"    # Find dataset at: [http://vis-www.cs.umass.edu/lfw/lfw-deepfunneled.tgz]
 
-def sample_noise_batch(bsize, emb_size=256):
-#     return np.random.uniform(-1., 1., size=[bsize, emb_size]).astype('float32')
-    return np.random.normal(size=(bsize, emb_size)).astype('float32')
+def sample_noise_batch(bsize, gaussian=True, emb_size=256):
+    if gaussian:
+        return np.random.normal(loc=0.0, scale=1.0, size=(bsize, emb_size)).astype('float32')
+    return np.random.uniform(-1., 1., size=[bsize, emb_size]).astype('float32')
 
 def iterate_minibatches(inputs, batchsize, shuffle=False):
     if shuffle:
@@ -24,8 +24,8 @@ def iterate_minibatches(inputs, batchsize, shuffle=False):
 
 def load_dataset(dx=80, dy=80, dimx=45, dimy=45):
     """
-    Loads the `Labeled Faces in the Wild` dataset with 
-    train/test split and attributes into memory.
+    Returns normalized and cropped array of images 
+    in the `Labeled Faces in the Wild` dataset.
 
     Args:
         use_raw (bool, optional):
@@ -51,7 +51,6 @@ def load_dataset(dx=80, dy=80, dimx=45, dimy=45):
             Shape of images in the training set.
     """
     X = []
-    photo_ids = []
 
     folders = os.listdir(IMAGES_DIR)
     for folder in tqdm(folders, total=len(folders), desc='Preprocessing', leave=False):
@@ -65,10 +64,10 @@ def load_dataset(dx=80, dy=80, dimx=45, dimy=45):
             img = cv2.resize(img, (dimx, dimy))
             X.append(img)
 
-    X = np.stack(X).astype('uint8')
+    X = np.array(X)
     IMG_SHAPE = X.shape[1:]
 
     # normalize images
-    X = X.astype('float32') / 255.0
+    X = (X.astype('float32') / 127.5) - 1.
 
     return X, IMG_SHAPE
