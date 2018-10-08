@@ -1,7 +1,7 @@
 import os
 import click
-import coloredlogs
 import logging
+import coloredlogs
 
 import numpy as np
 import tensorflow as tf
@@ -139,11 +139,9 @@ def get_vars_by_scope(scope_name):
     """ Returns list of trainable vars under scope name.
     
     Args:
-        scope_name (str):
-            Variable scope name.
+        scope_name (str): Variable scope name.
     Returns:
-        list of `tf.Variable`:
-            List of trainable variables under given scope name.
+        list of `tf.Variable`: List of trainable variables under given scope name.
     """
     return tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope=scope_name)
 

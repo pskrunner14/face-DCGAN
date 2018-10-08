@@ -8,20 +8,12 @@ def dense_layer(inputs, train, units, name, use_batchnorm=True, activation='leak
     """ Creates a dense layer with arbitrary number of hidden units with batch normalization and activation.
 
     Args:
-        inputs (tf.placeholder):
-            Inputs to the dense layer.
-        train (bool):
-            Flag for whether to freeze batch-norm layer vars.
-        units (int):
-            Number of hidden units in dense layer.
-        name (str):
-            Scope name for layer variables.
-        use_batchnorm (bool, optional):
-            Flag for whether to use batch-norm layer.
-            If unspecified, defaults to `True`.
-        activation (str, optional):
-            Type of activation layer [relu/leaky_relu].
-            If unspecified, defaults to `leaky_relu`.
+        inputs (tf.placeholder): Inputs to the dense layer.
+        train (bool): Flag for whether to freeze batch-norm layer vars.
+        units (int): Number of hidden units in dense layer.
+        name (str): Scope name for layer variables.
+        use_batchnorm (bool, optional): Flag for whether to use batch-norm layer. If unspecified, defaults to `True`.
+        activation (str, optional): Type of activation layer [relu/leaky_relu]. If unspecified, defaults to `leaky_relu`.
     Returns:
         Dense layer with given variable name.
     """
@@ -42,36 +34,33 @@ def dense_layer(inputs, train, units, name, use_batchnorm=True, activation='leak
             dense = tf.nn.leaky_relu(dense, alpha=0.2, name=scope.name)
     return dense
 
-def conv_layer(inputs, train, kernel_dims, in_channels, out_channels, name, strides=(1, 1), 
-                padding='SAME', use_avgpool=True, use_batchnorm=True, activation='leaky_relu'):
+def conv_layer(
+        inputs, 
+        train, 
+        kernel_dims, 
+        in_channels, 
+        out_channels, 
+        name, 
+        strides=(1, 1), 
+        padding='SAME', 
+        use_avgpool=True, 
+        use_batchnorm=True, 
+        activation='leaky_relu'
+    ):
     """ Creates a convolutional layer with average pooling, batch normalization and activation.
 
     Args:
-        inputs (tf.placeholder):
-            Inputs to the dense layer.
-        train (bool):
-            Flag for whether to freeze batch-norm layer vars.
-        kernel_dims (tuple of `int`):
-            Kernel dimensions (height and width) to use in conv op.
-        in_channels (int):
-            Number of input channels.
-        out_channels (int):
-            Number of output channels after conv op.
-        name (str):
-            Scope name for layer variables.
-        strides (tuple of `int`, optional):
-            Strides to use for conv op.
-        padding (str, optional):
-            Padding type to use for conv op.
-        use_avgpool (bool, optional):
-            Flag for whether to use average-pooling.
-            If unspecified, defaults to `True`.
-        use_batchnorm (bool, optional):
-            Flag for whether to use batch-norm layer.
-            If unspecified, defaults to `True`.
-        activation (str, optional):
-            Type of activation layer [relu/leaky_relu].
-            If unspecified, defaults to `leaky_relu`.
+        inputs (tf.placeholder): Input tensor to the conv layer.
+        train (bool): Flag for whether to freeze batch-norm layer vars.
+        kernel_dims (tuple of `int`): Kernel dimensions (height and width) to use in conv op.
+        in_channels (int): Number of input channels.
+        out_channels (int): Number of output channels after conv op.
+        name (str): Scope name for layer variables.
+        strides (tuple of `int`, optional): Strides to use for conv op.
+        padding (str, optional): Padding type to use for conv op. If unspecified, defaults to `SAME`.
+        use_avgpool (bool, optional): Flag for whether to use average-pooling. If unspecified, defaults to `True`.
+        use_batchnorm (bool, optional): Flag for whether to use batch-norm layer. If unspecified, defaults to `True`.
+        activation (str, optional): Type of activation layer [relu/leaky_relu]. If unspecified, defaults to `leaky_relu`.
     Returns:
         Convolutional layer with given variable name.
     """
@@ -97,36 +86,31 @@ def conv_layer(inputs, train, kernel_dims, in_channels, out_channels, name, stri
                                             strides=(1, 1), name=scope.name)
     return conv
 
-def deconv_layer(inputs, train, kernel_dims, in_channels, out_channels, batch_size, name, 
-                strides=(1, 1), padding='VALID', use_batchnorm=True, activation='leaky_relu'):
+def deconv_layer(
+        inputs, train, 
+        kernel_dims, 
+        in_channels, 
+        out_channels, 
+        batch_size, name, 
+        strides=(1, 1), 
+        padding='VALID', 
+        use_batchnorm=True, 
+        activation='leaky_relu'
+    ):
     """ Creates a de-convolutional layer with batch normalization and activation.
 
     Args:
-        inputs (tf.placeholder):
-            Inputs to the dense layer.
-        train (bool):
-            Flag for whether to freeze batch-norm layer vars.
-        kernel_dims (tuple of `int`):
-            Kernel dimensions (height and width) to use in deconv op.
-        in_channels (int):
-            Number of input channels.
-        out_channels (int):
-            Number of output channels after deconv op.
-        batch_size (tf.shape):
-            Batch size to use when defining output shape in conv2d_transpose op.
-            Please see https://riptutorial.com/tensorflow/example/29767/using-tf-nn-conv2d-transpose-for-arbitary-batch-sizes-and-with-automatic-output-shape-calculation-
-        name (str):
-            Scope name for layer variables.
-        strides (tuple of `int`, optional):
-            Strides to use for deconv op.
-        padding (str, optional):
-            Padding type to use for deconv op.
-        use_batchnorm (bool, optional):
-            Flag for whether to use batch-norm layer.
-            If unspecified, defaults to `True`.
-        activation (str, optional):
-            Type of activation layer [relu/leaky_relu].
-            If unspecified, defaults to `leaky_relu`.
+        inputs (tf.placeholder): Input tensor to the deconv layer.
+        train (bool): Flag for whether to freeze batch-norm layer vars.
+        kernel_dims (tuple of `int`): Kernel dimensions (height and width) to use in deconv op.
+        in_channels (int): Number of input channels.
+        out_channels (int): Number of output channels after deconv op.
+        batch_size (tf.shape): Batch size to use when defining output shape in conv2d_transpose op.
+        name (str): Scope name for layer variables.
+        strides (tuple of `int`, optional): Strides to use for deconv op.
+        padding (str, optional): Padding type to use for deconv op. If unspecified, defaults to `VALID`.
+        use_batchnorm (bool, optional): Flag for whether to use batch-norm layer. If unspecified, defaults to `True`.
+        activation (str, optional): Type of activation layer [relu/leaky_relu]. If unspecified, defaults to `leaky_relu`.
     Returns:
         De-convolutional layer with given variable name.
     """

@@ -31,15 +31,16 @@ def generator(input_noise, train=True):
     See https://arxiv.org/abs/1511.06434.pdf.
 
     Args:
-        input_noise (tf.placeholder):
-            Input noise batch for generator. 
-        train (bool, optional):
-            Flag for whether to freeze batch-norm layer vars.
+        input_noise (tf.placeholder): Input noise distribution tensor. 
+        train (bool, optional): Flag for whether to freeze batch-norm layer vars. If unspecified, defaults to `True`.
     Returns:
-        Generated images of the same batch size.
+        Tensor containing images generated from the noise distribution.
     """
     dense_1_shape = [8, 8, 10]
     dense_1_units = np.prod(dense_1_shape)
+    
+    # We need to pass `batch_size` for using in `output_shape` in deconv op.
+    # See https://riptutorial.com/tensorflow/example/29767/using-tf-nn-conv2d-transpose-for-arbitary-batch-sizes-and-with-automatic-output-shape-calculation-
     batch_size = tf.shape(input_noise)[0]
 
     with tf.variable_scope('generator', reuse=tf.AUTO_REUSE) as scope:
@@ -69,12 +70,10 @@ def discriminator(image_data, train=True):
     See https://arxiv.org/abs/1511.06434.pdf.
 
     Args:
-        image_data (tf.placeholder):
-            Batch of images to classify as real/fake.
-        train (bool, optional):
-            Flag for whether to freeze batch-norm layer vars.
+        image_data (tf.placeholder): Tensor containing real/fake images to classify.
+        train (bool, optional): Flag for whether to freeze batch-norm layer vars. If unspecified, defaults to `True`.
     Returns:
-        Probabilities of each input image in batch being real.
+        Tensors containing probabilites and logits pertaining to input images being real/fake.
     """
     with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE) as scope:
         conv_1 = conv_layer(image_data, train, kernel_dims=(3, 3), 

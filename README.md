@@ -42,3 +42,5 @@ Options:
 
 * [Generative Adversarial Networks](https://arxiv.org/pdf/1406.2661)
 * [Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks](https://arxiv.org/abs/1511.06434)
+
+For the Torch implementation of the same, please see [face-DCGAN.torch](https://github.com/pskrunner14/face-DCGAN/face-DCGAN.torch)
