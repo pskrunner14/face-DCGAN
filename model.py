@@ -32,11 +32,11 @@ def generator(input_noise, train=True):
 
     Args:
         input_noise (tf.placeholder):
-
+            Input noise batch for generator. 
         train (bool, optional):
-
+            Flag for whether to freeze batch-norm layer vars.
     Returns:
-
+        Generated images of the same batch size.
     """
     dense_1_shape = [8, 8, 10]
     dense_1_units = np.prod(dense_1_shape)
@@ -45,22 +45,21 @@ def generator(input_noise, train=True):
     with tf.variable_scope('generator', reuse=tf.AUTO_REUSE) as scope:
         dense_1 = dense_layer(input_noise, train, units=dense_1_units, name='dense_1')
         dense_1_reshaped = tf.reshape(dense_1, shape=[-1, ] + dense_1_shape, name='dense_1_reshaped')
-        deconv_1 = deconv_layer(dense_1_reshaped, train, kernel_dim=5, 
+        deconv_1 = deconv_layer(dense_1_reshaped, train, kernel_dims=(5, 5), 
                                 in_channels=dense_1_shape[-1], out_channels=64, 
                                 batch_size=batch_size, name='deconv_1')
-        deconv_2 = deconv_layer(deconv_1, train, kernel_dim=5, 
+        deconv_2 = deconv_layer(deconv_1, train, kernel_dims=(5, 5), 
                                 in_channels=64, out_channels=64, 
                                 batch_size=batch_size, name='deconv_2')
         # H, W = deconv_2.get_shape().as_list()[1: 3]
         # upsampled_deconv_2 = tf.image.resize_nearest_neighbor(deconv_2, (2 * H, 2 * W), name='upsampled_deconv_2')
         upsampled_deconv_2 = tf.keras.layers.UpSampling2D(size=(2, 2))(deconv_2)
-        deconv_3 = deconv_layer(upsampled_deconv_2, train, kernel_dim=7, 
+        deconv_3 = deconv_layer(upsampled_deconv_2, train, kernel_dims=(7, 7), 
                                 in_channels=64, out_channels=32,
                                 batch_size=batch_size, name='deconv_3')
-        logits = conv_layer(deconv_3, train, kernel_dim=3, in_channels=32, 
+        logits = conv_layer(deconv_3, train, kernel_dims=(3, 3), in_channels=32, 
                             out_channels=3, name='logits', padding='VALID', 
-                            use_avgpool=False, use_batchnorm=False, 
-                            activation=None)
+                            use_avgpool=False, use_batchnorm=False, activation=None)
         out = tf.nn.tanh(logits, name=scope.name)
     return out
 
@@ -73,17 +72,16 @@ def discriminator(image_data, train=True):
         image_data (tf.placeholder):
 
         train (bool, optional):
-
+            Flag for whether to freeze batch-norm layer vars.
     Returns:
-        
+        Probabilities of each input image in batch being real.
     """
     with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE) as scope:
-        conv_1 = conv_layer(image_data, train, kernel_dim=3, 
-                            in_channels=3, out_channels=32, 
-                            name='conv_1')
-        conv_2 = conv_layer(conv_1, train, kernel_dim=3, 
-                            in_channels=32, out_channels=32, 
-                            name='conv_2', stride=2)
+        conv_1 = conv_layer(image_data, train, kernel_dims=(3, 3), 
+                            in_channels=3, out_channels=32, name='conv_1')
+        conv_2 = conv_layer(conv_1, train, kernel_dims=(3, 3), 
+                            in_channels=32, out_channels=32, name='conv_2', 
+                            strides=(2, 2))
         dim = np.prod(conv_2.get_shape().as_list()[1: ])
         flattened_1 = tf.reshape(conv_2, [-1, dim])
         dense_1 = dense_layer(flattened_1, train, 256, name='dense_1')

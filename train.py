@@ -75,14 +75,13 @@ def train(noise_dim, gen_lr, disc_lr, batch_size, num_epochs, save_every, tensor
 
     tf.reset_default_graph()
     try:
-        gpu_avail = tf.test.is_gpu_available(cuda_only=True)
-        if not gpu_avail:
+        if not tf.test.is_gpu_available(cuda_only=True):
             raise Exception
     except Exception:
         logging.critical('CUDA capable GPU device not found.')
         exit(0)
 
-    logging.warn('constructing graph on GPU device 0')
+    logging.warn('constructing graph on GPU')
     with tf.device('/gpu:0'):
 
         # Define placeholders for input data.
@@ -95,13 +94,14 @@ def train(noise_dim, gen_lr, disc_lr, batch_size, num_epochs, save_every, tensor
         d_probs, d_fake_logits = discriminator(g_out, train=True)
         d_probs2, d_real_logits = discriminator(real_data, train=True)
 
+        logging.debug('defining training ops')
         # Define Generator(G) ops.
         g_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=d_fake_logits, labels=tf.ones_like(d_fake_logits)))
         g_optimizer = tf.train.AdamOptimizer(learning_rate=gen_lr)
         g_vars = get_vars_by_scope('generator')
         g_train_step = g_optimizer.minimize(g_loss, var_list=g_vars)
 
-        # Define Discriminator ops.
+        # Define Discriminator(D) ops.
         d_loss_real = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=d_real_logits, labels=tf.ones_like(d_real_logits)))
         d_loss_fake = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=d_fake_logits, labels=tf.zeros_like(d_real_logits)))
         d_loss = d_loss_real + d_loss_fake
@@ -121,7 +121,7 @@ def train(noise_dim, gen_lr, disc_lr, batch_size, num_epochs, save_every, tensor
             eval_real_data = X[idx]
             for X_batch in tqdm(iterate_minibatches(X, batch_size, shuffle=True), 
                                 total=X.shape[0] // batch_size, desc='Epoch[{}/{}]'
-                                .format(epoch, num_epochs), leave=False):
+                                .format(epoch + 1, num_epochs), leave=False):
                 sess.run([d_train_step], feed_dict={real_data: X_batch,
                                                     noise: sample_noise_batch(batch_size)})
                 for _ in range(2):
@@ -131,17 +131,16 @@ def train(noise_dim, gen_lr, disc_lr, batch_size, num_epochs, save_every, tensor
                                                             feed_dict={real_data: eval_real_data,
                                                                     noise: eval_noise})
             # Generate images using G and save in `out/`.
-            tl.visualize.save_images(eval_images, [4, 4], 'out/eval_{}.png'.format(epoch))
+            tl.visualize.save_images(eval_images, [4, 4], 'out/eval_{}.png'.format(epoch + 1))
             logging.info('Epoch[{}/{}]    g_loss: {:.6f}   -   d_loss: {:.6f}'
-                        .format(epoch, num_epochs, g_loss_iter, d_loss_iter))
+                        .format(epoch + 1, num_epochs, g_loss_iter, d_loss_iter))
 
 def get_vars_by_scope(scope_name):
     """ Returns list of trainable vars under scope name.
-
+    
     Args:
         scope_name (str):
             Variable scope name.
-
     Returns:
         list of `tf.Variable`:
             List of trainable variables under given scope name.

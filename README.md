@@ -4,7 +4,7 @@ This is a TensorFlow implementation of [https://arxiv.org/abs/1511.06434](https:
 
 ![DCGAN](./images/DCGAN.png)
 
-### Usage
+## Usage
 
 ```
 $ python train.py --help
@@ -32,8 +32,13 @@ Options:
   --help                     Show this message and exit.
 ```
 
-### Built with
+## Built with
 
 * Python
 * TensorFlow
 * Numpy
+
+## References
+
+* [Generative Adversarial Networks](https://arxiv.org/pdf/1406.2661)
+* [Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks](https://arxiv.org/abs/1511.06434)
