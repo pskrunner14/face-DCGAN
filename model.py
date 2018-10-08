@@ -70,7 +70,7 @@ def discriminator(image_data, train=True):
 
     Args:
         image_data (tf.placeholder):
-
+            Batch of images to classify as real/fake.
         train (bool, optional):
             Flag for whether to freeze batch-norm layer vars.
     Returns:
