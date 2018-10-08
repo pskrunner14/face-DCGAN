@@ -14,7 +14,7 @@ Links:
     - [DCGAN Paper](https://arxiv.org/abs/1511.06434.pdf).
 
 Author: Prabhsimran Singh
-Project: https://github.com/pskrunner14/face-DCGAN/face-DCGAN.torch ]]--
+Project: https://github.com/pskrunner14/face-DCGAN/tree/master/face-DCGAN.torch ]]--
 
 require 'nn'
 require 'torch'

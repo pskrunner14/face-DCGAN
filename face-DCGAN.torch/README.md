@@ -2,7 +2,7 @@
 
 This is a Torch implementation of [https://arxiv.org/abs/1511.06434](https://arxiv.org/abs/1511.06434).
 
-![DCGAN](./images/DCGAN.png)
+![DCGAN](../images/DCGAN.png)
 
 ## Usage
 
