@@ -1,6 +1,19 @@
+""" Custom operations written in tensorflow for DCGAN.
+
+See https://arxiv.org/abs/1511.06434.pdf.
+"""
 import tensorflow as tf
 
 def dense_layer(inputs, train, units, name, use_batchnorm=True, activation='leaky_relu'):
+    """ Creates a dense layer with arbitrary number of hidden units with batch normalization and activation.
+
+    Args:
+
+
+    Returns:
+
+
+    """
     with tf.variable_scope(name) as scope:
         input_dim = inputs.get_shape().as_list()[-1]
         weights = tf.get_variable('weights', shape=[input_dim, units], 
@@ -20,6 +33,15 @@ def dense_layer(inputs, train, units, name, use_batchnorm=True, activation='leak
 
 def conv_layer(inputs, train, kernel_dim, in_channels, out_channels, name, stride=1, 
             padding='SAME', use_avgpool=True, use_batchnorm=True, activation='leaky_relu'):
+    """ Creates a convolutional layer with average pooling, batch normalization and activation.
+
+    Args:
+
+
+    Returns:
+
+    
+    """
     with tf.variable_scope(name) as scope:
         kernel = tf.get_variable('kernel', shape=[kernel_dim, kernel_dim, in_channels, out_channels], 
                                 initializer=tf.glorot_uniform_initializer(), 
@@ -43,7 +65,16 @@ def conv_layer(inputs, train, kernel_dim, in_channels, out_channels, name, strid
     return conv
 
 def deconv_layer(inputs, train, kernel_dim, in_channels, out_channels, batch_size,
-                    name, stride=1, use_batchnorm=True, activation='leaky_relu'):
+                name, stride=1, use_batchnorm=True, activation='leaky_relu'):
+    """ Creates a de-convolutional layer with batch normalization and activation.
+
+    Args:
+
+
+    Returns:
+
+    
+    """
     with tf.variable_scope(name) as scope:
         kernel = tf.get_variable('kernel', shape=[kernel_dim, kernel_dim, out_channels, in_channels], 
                                 initializer=tf.glorot_uniform_initializer(), dtype=tf.float32)

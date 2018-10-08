@@ -1,8 +1,43 @@
-import numpy as np
+""" Deep Convolutional Generative Adversarial Network (DCGAN).
 
-from ops import *
+Using deep convolutional generative adversarial networks (DCGAN) 
+to generate face images from a noise distribution.
+
+References:
+    - Generative Adversarial Nets. Goodfellow et al. arXiv: 1406.2661.
+    - Unsupervised Representation Learning with Deep Convolutional 
+    Generative Adversarial Networks. A Radford, L Metz, S Chintala. 
+    arXiv: 1511.06434.
+
+Links:
+    - [GAN Paper](https://arxiv.org/pdf/1406.2661.pdf).
+    - [DCGAN Paper](https://arxiv.org/abs/1511.06434.pdf).
+
+Author: Prabhsimran Singh
+Project: https://github.com/pskrunner14/face-DCGAN
+"""
+import numpy as np
+import tensorflow as tf
+
+from ops import (
+    dense_layer,
+    conv_layer,
+    deconv_layer
+)
 
 def generator(input_noise, train=True):
+    """ Creates convolutional generator model.
+        
+    See https://arxiv.org/abs/1511.06434.pdf.
+
+    Args:
+        input_noise (tf.placeholder):
+
+        train (bool, optional):
+
+    Returns:
+
+    """
     dense_1_shape = [8, 8, 10]
     dense_1_units = np.prod(dense_1_shape)
     batch_size = tf.shape(input_noise)[0]
@@ -27,9 +62,21 @@ def generator(input_noise, train=True):
                             use_avgpool=False, use_batchnorm=False, 
                             activation=None)
         out = tf.nn.tanh(logits, name=scope.name)
-    return logits, out
+    return out
 
 def discriminator(image_data, train=True):
+    """ Creates convolutional discriminator model.
+        
+    See https://arxiv.org/abs/1511.06434.pdf.
+
+    Args:
+        image_data (tf.placeholder):
+
+        train (bool, optional):
+
+    Returns:
+        
+    """
     with tf.variable_scope('discriminator', reuse=tf.AUTO_REUSE) as scope:
         conv_1 = conv_layer(image_data, train, kernel_dim=3, 
                             in_channels=3, out_channels=32, 

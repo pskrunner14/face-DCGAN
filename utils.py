@@ -7,19 +7,53 @@ from tqdm import tqdm
 
 IMAGES_DIR = "datasets/lfw-deepfunneled"    # Find dataset at: [http://vis-www.cs.umass.edu/lfw/lfw-deepfunneled.tgz]
 
-def sample_noise_batch(bsize, gaussian=True, emb_size=256):
-    if gaussian:
-        return np.random.normal(loc=0.0, scale=1.0, size=(bsize, emb_size)).astype('float32')
-    return np.random.uniform(-1., 1., size=[bsize, emb_size]).astype('float32')
+def sample_noise_batch(batch_size, gaussian=True, emb_size=256):
+    """ Returns batch of gaussian/uniform noise.
 
-def iterate_minibatches(inputs, batchsize, shuffle=False):
+    Args:
+        batch_size (int):
+            Batch size for sampling noise.
+        gaussian (bool, optional):
+            Flag for sampling from gaussian noise distribution instead of uniform noise distribution.
+            If unspecified, defaults to `True`.
+        emb_size (int, optional):
+            Dimension of each noise sample in the array.
+            if unspecified, defaults to 256.
+
+    Returns:
+        numpy.ndarray:
+            Gaussian/uniformly sampled noise distribution.
+    """
+    if gaussian:
+        return np.random.normal(loc=0.0, scale=1.0, size=(batch_size, emb_size)).astype('float32')
+    return np.random.uniform(-1., 1., size=[batch_size, emb_size]).astype('float32')
+
+def iterate_minibatches(inputs, batch_size=64, shuffle=False):
+    """ Returns a mini-batch generator.
+
+    Args:
+        inputs (numpy.ndarray):
+            Array of inputs (need to be atleast 2-dimensional).
+        batch_size (int, optional):
+            Batch size for sampling a mini-batch from the input distribution.
+            If unspecified, defaults to 64.
+        shuffle (bool, optional):
+            Flag for randomly shuffling the data before generating mini-batches.
+            If unspecified, defaults to `False`.
+
+    Returns:
+        generator:
+            Generates mini-batches of inputs.
+    """
+    assert len(inputs.shape) >= 2, 'input needs to be atleast 2-dimensional.'
+    
     if shuffle:
         indices = np.random.permutation(len(inputs))
-    for start_idx in range(0, len(inputs) - batchsize + 1, batchsize):
+    for start_idx in range(0, len(inputs) - batch_size + 1, batch_size):
         if shuffle:
-            excerpt = indices[start_idx:start_idx + batchsize]
+            excerpt = indices[start_idx:start_idx + batch_size]
         else:
-            excerpt = slice(start_idx, start_idx + batchsize)
+            excerpt = slice(start_idx, start_idx + batch_size)
         yield inputs[excerpt]
 
 def load_dataset(dx=80, dy=80, dimx=45, dimy=45):
@@ -28,21 +62,18 @@ def load_dataset(dx=80, dy=80, dimx=45, dimy=45):
     in the `Labeled Faces in the Wild` dataset.
 
     Args:
-        use_raw (bool, optional):
-            Flag for using raw data or not. If unspecified, 
-            defaults to `False`.
         dx (int, optional):
-            x co-ordinate to crop the images. If unspecified, 
-            defaults to 80.
+            x co-ordinate to crop the images. 
+            If unspecified, defaults to 80.
         dy (int, optional):
-            y co-ordinate to crop the images. If unspecified, 
-            defaults to 80.
+            y co-ordinate to crop the images. 
+            If unspecified, defaults to 80.
         dimx (int, optional):
-            Width dim of the images. If unspecified, defaults 
-            to 45.
+            Width dim of the images. 
+            If unspecified, defaults to 45.
         dimy (int, optional):
-            Height dim of the images. If unspecified, defaults 
-            to 45.
+            Height dim of the images. 
+            If unspecified, defaults to 45.
     
     Returns:
         numpy.ndarray:
