@@ -89,4 +89,3 @@ def discriminator(image_data, train=True):
                             use_batchnorm=False, activation=None)
         probs = tf.nn.sigmoid(logits, name=scope.name)
     return probs, logits
-            
