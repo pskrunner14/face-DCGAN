@@ -16,6 +16,7 @@ Links:
 Author: Prabhsimran Singh
 Project: https://github.com/pskrunner14/face-DCGAN
 """
+
 import numpy as np
 import tensorflow as tf
 

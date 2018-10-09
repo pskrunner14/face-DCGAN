@@ -7,12 +7,25 @@ This is a Torch implementation of [https://arxiv.org/abs/1511.06434](https://arx
 ## Usage
 
 ```
-$ th train.lua
+$ th train.lua --help
+
+Trains a Deep Convolutional Generative Network (DCGAN)
+
+See https://arxiv.org/abs/1511.06434.pdf for more details.
+
+Optional arguments:
+  -glr        learning rate for minimizing generator loss [0.0001]
+  -g_beta1    value of `beta1` hyperparam for generator optimizer [0.5]
+  -dlr        learning rate for minimizing discriminator loss [0.0001]
+  -d_beta1    value of `beta1` hyperparam for discriminator optimizer [0.5]
+  -batch_size mini-batch size for training the adversarial network [64]
+  -num_epochs number of epochs to train the adversarial network [50]
+  -gpu        GPU-id if using GPU for training the adversarial network. Use -1 for CPU. [0]
 ```
 
 ## Built with
 
-* Lua
+* LuaJIT
 * Torch7
 
 ## References
