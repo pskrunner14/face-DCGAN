@@ -8,6 +8,7 @@ require 'cunn'
 require 'optim'
 require 'cutorch'
 require 'paths'
+require 'xlua'
 
 -- set defualt tensor type float
 torch.setdefaulttensortype('torch.FloatTensor')
@@ -25,6 +26,7 @@ cmd:text('See https://arxiv.org/abs/1511.06434.pdf for more details.')
 cmd:text()
 cmd:text('Optional arguments:')
 
+cmd:option('-z_dim', 256, 'dimensions of 1-D noise tensor to feed the generator')
 cmd:option('-glr', 0.0001, 'learning rate for minimizing generator loss')
 cmd:option('-g_beta1', 0.5, 'value of `beta1` hyperparam for generator optimizer')
 cmd:option('-dlr', 0.0001, 'learning rate for minimizing discriminator loss')
@@ -36,7 +38,7 @@ cmd:option('-gpu', 1, 'if using GPU for training the adversarial network. Use 0 
 opt = cmd:parse(arg)
 
 -- create adversarial networks
-local netG = DCGAN.generator(256)
+local netG = DCGAN.generator(opt.z_dim)
 local netD = DCGAN.discriminator()
 
 -- sanity check
@@ -78,10 +80,29 @@ local parametersG, gradParametersG = netG:getParameters()
 local parametersD, gradParametersD = netD:getParameters()
 
 -- sanity check dims
-input = torch.rand(2, 256):cuda()
+input = torch.rand(2, opt.z_dim):cuda()
 output = netG:forward(input)
 assert(torch.all(torch.eq(torch.Tensor(3, 36, 36):zero(), torch.Tensor(output[1]:size()):zero())))
 prob = netD:forward(output)
 assert(torch.all(torch.eq(torch.Tensor(1):zero(), torch.Tensor(prob[1]:size()):zero())))
 
 -- training model
+for epoch = 0, opt.num_epochs do
+    train_loss = 0
+    local n_iter = 0
+    for t = 1, trainset:size(), opt.batch_size do
+        -- disp progress bar
+        xlua:progress(t, trainset:size() - (trainset:size() % opt.batch_size))
+
+        -- create mini-batch
+        local inputs = {}
+        local targets = {}
+        for i = t, math.min(t + opt.batch_size - 1, trainset:size()) do
+            table.insert(inputs, trainset.data[i])
+            table.insert(targets, trainset.label[i])
+        end
+
+        -- create closure to evaluate f(X) and df/dX
+    end
+end
+        

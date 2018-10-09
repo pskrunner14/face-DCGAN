@@ -78,12 +78,12 @@ function DCGAN.discriminator()
     net:add(nn.SpatialBatchNormalization(32))
     net:add(nn.LeakyReLU(0.2, true))
     net:add(nn.SpatialAveragePooling(2, 2, 1, 1))
-    -- --[[ DENSE 1 ]]--
+    --[[ DENSE 1 ]]--
     net:add(nn.View(-1):setNumInputDims(3)) -- flatten
     net:add(nn.Linear(9248, 256))
     net:add(nn.BatchNormalization(256))
     net:add(nn.LeakyReLU(0.2, true))
-    -- -- --[[ FINAL DENSE ]]--
+    --[[ FINAL DENSE ]]--
     net:add(nn.Linear(256, 1))
     net:add(nn.Sigmoid())
 
