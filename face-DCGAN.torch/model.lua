@@ -14,7 +14,10 @@ Links:
     - [DCGAN Paper](https://arxiv.org/abs/1511.06434.pdf).
 
 Author: Prabhsimran Singh
-Project: https://github.com/pskrunner14/face-DCGAN/tree/master/face-DCGAN.torch ]]--
+Project: https://github.com/pskrunner14/face-DCGAN/tree/master/face-DCGAN.torch ]]
+
+local DCGAN = {}
+DCGAN.__index = DCGAN
 
 -- Randomly initializes the weights and biases of a network module.
 local function weights_init(m)
@@ -26,12 +29,9 @@ local function weights_init(m)
        if m.weight then m.weight:normal(1.0, 0.02) end
        if m.bias then m.bias:zero() end
     end
- end 
+ end
 
--- DCGAN model
-local DCGAN = {}
-
--- DCGAN Generator network as described by
+-- DCGAN Generator Network as described by
 -- Radford et al. in "Unsupervised Representation Learning 
 -- with Deep Convolutional Generative Adversarial Networks".
 function DCGAN.generator(z_dim)
@@ -63,7 +63,7 @@ function DCGAN.generator(z_dim)
     return net
 end
 
--- DCGAN Discriminator network as described by
+-- DCGAN Discriminator Network as described by
 -- Radford et al. in "Unsupervised Representation Learning 
 -- with Deep Convolutional Generative Adversarial Networks".
 function DCGAN.discriminator()
@@ -79,7 +79,7 @@ function DCGAN.discriminator()
     net:add(nn.LeakyReLU(0.2, true))
     net:add(nn.SpatialAveragePooling(2, 2, 1, 1))
     -- --[[ DENSE 1 ]]--
-    net:add(nn.View(-1):setNumInputDims(3))
+    net:add(nn.View(-1):setNumInputDims(3)) -- flatten
     net:add(nn.Linear(9248, 256))
     net:add(nn.BatchNormalization(256))
     net:add(nn.LeakyReLU(0.2, true))

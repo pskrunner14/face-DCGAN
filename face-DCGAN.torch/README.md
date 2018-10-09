@@ -20,7 +20,7 @@ Optional arguments:
   -d_beta1    value of `beta1` hyperparam for discriminator optimizer [0.5]
   -batch_size mini-batch size for training the adversarial network [64]
   -num_epochs number of epochs to train the adversarial network [50]
-  -gpu        GPU-id if using GPU for training the adversarial network. Use -1 for CPU. [0]
+  -gpu        if using GPU for training the adversarial network. Use 0 for CPU. [1]
 ```
 
 ## Built with

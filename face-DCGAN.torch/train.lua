@@ -2,20 +2,18 @@
 
 Please see https://arxiv.org/abs/1511.06434.pdf 
 
-Usage: th train.lua --help ]]--
+Usage: th train.lua --help ]]
 
 require 'cunn'
 require 'optim'
 require 'cutorch'
-
-require 'image'
 require 'paths'
 
 -- set defualt tensor type float
 torch.setdefaulttensortype('torch.FloatTensor')
 
 -- local modules
-local utils = require('utils')
+local Utils = require('utils')
 local DCGAN = require('model')
 
 -- command line arguments
@@ -85,3 +83,5 @@ output = netG:forward(input)
 assert(torch.all(torch.eq(torch.Tensor(3, 36, 36):zero(), torch.Tensor(output[1]:size()):zero())))
 prob = netD:forward(output)
 assert(torch.all(torch.eq(torch.Tensor(1):zero(), torch.Tensor(prob[1]:size()):zero())))
+
+-- training model
