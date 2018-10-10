@@ -5,7 +5,9 @@ import numpy as np
 
 from tqdm import tqdm
 
-IMAGES_DIR = "datasets/lfw-deepfunneled"    # Find dataset at: [http://vis-www.cs.umass.edu/lfw/lfw-deepfunneled.tgz]
+# "Labelled Faces in the Wild" dataset
+# Find dataset at: [http://vis-www.cs.umass.edu/lfw/lfw-deepfunneled.tgz]
+IMAGES_DIR = "datasets/lfw-deepfunneled"
 
 def sample_noise_batch(batch_size, gaussian=True, emb_size=256):
     """ Returns batch of gaussian/uniform noise.
@@ -32,18 +34,12 @@ def iterate_minibatches(inputs, batch_size=64, shuffle=False):
     """ Returns a mini-batch generator.
 
     Args:
-        inputs (numpy.ndarray):
-            Array of inputs (need to be atleast 2-dimensional).
-        batch_size (int, optional):
-            Batch size for sampling a mini-batch from the input distribution.
-            If unspecified, defaults to 64.
-        shuffle (bool, optional):
-            Flag for randomly shuffling the data before generating mini-batches.
-            If unspecified, defaults to `False`.
+        inputs (numpy.ndarray): Array of inputs (need to be atleast 2-dimensional).
+        batch_size (int, optional): Batch size for sampling a mini-batch from the input distribution. If unspecified, defaults to 64.
+        shuffle (bool, optional): Flag for randomly shuffling the data before generating mini-batches. If unspecified, defaults to `False`.
 
-    Returns:
-        generator:
-            Generates mini-batches of inputs.
+    Returns: 
+        generator: Mini-batch generator for input images.
     """
     assert len(inputs.shape) >= 2, 'input needs to be atleast 2-dimensional.'
     
@@ -62,24 +58,13 @@ def load_dataset(dx=80, dy=80, dimx=45, dimy=45):
     in the `Labeled Faces in the Wild` dataset.
 
     Args:
-        dx (int, optional):
-            x co-ordinate to crop the images. 
-            If unspecified, defaults to 80.
-        dy (int, optional):
-            y co-ordinate to crop the images. 
-            If unspecified, defaults to 80.
-        dimx (int, optional):
-            Width dim of the images. 
-            If unspecified, defaults to 45.
-        dimy (int, optional):
-            Height dim of the images. 
-            If unspecified, defaults to 45.
-    
+        dx (int, optional): x co-ordinate to crop the images. If unspecified, defaults to 80.
+        dy (int, optional): y co-ordinate to crop the images. If unspecified, defaults to 80.
+        dimx (int, optional): Width dim of the images. If unspecified, defaults to 45.
+        dimy (int, optional): Height dim of the images. If unspecified, defaults to 45.
     Returns:
-        numpy.ndarray:
-            Training data for the model.
-        list:
-            Shape of images in the training set.
+        numpy.ndarray: Training data for the model.
+        list of `int`: Shape of images in the training set.
     """
     X = []
 
