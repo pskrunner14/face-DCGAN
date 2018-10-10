@@ -13,18 +13,11 @@ def sample_noise_batch(batch_size, gaussian=True, emb_size=256):
     """ Returns batch of gaussian/uniform noise.
 
     Args:
-        batch_size (int):
-            Batch size for sampling noise.
-        gaussian (bool, optional):
-            Flag for sampling from gaussian noise distribution instead of uniform noise distribution.
-            If unspecified, defaults to `True`.
-        emb_size (int, optional):
-            Dimension of each noise sample in the array.
-            if unspecified, defaults to 256.
-
+        batch_size (int): Batch size for sampling noise.
+        gaussian (bool, optional): Flag for sampling from gaussian noise distribution. If unspecified, defaults to `True`.
+        emb_size (int, optional): Dimension of each noise sample in the array. If unspecified, defaults to 256.
     Returns:
-        numpy.ndarray:
-            Gaussian/uniformly sampled noise distribution.
+        numpy.ndarray: Gaussian/uniformly sampled noise distribution.
     """
     if gaussian:
         return np.random.normal(loc=0.0, scale=1.0, size=(batch_size, emb_size)).astype('float32')

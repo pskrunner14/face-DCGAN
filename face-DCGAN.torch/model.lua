@@ -19,15 +19,22 @@ Project: https://github.com/pskrunner14/face-DCGAN/tree/master/face-DCGAN.torch 
 local DCGAN = {}
 DCGAN.__index = DCGAN
 
+-- "Understanding the difficulty of training deep feedforward neural networks"
+-- Xavier Glorot, 2010
+local function w_init_xavier(fan_in, fan_out)
+    return math.sqrt(2/(fan_in + fan_out))
+ end
+
 -- Randomly initializes the weights and biases of a network module.
 local function weights_init(m)
     local name = torch.type(m)
     if name:find('Convolution') then
-       m.weight:normal(0.0, 0.02)
-       m.bias:zero()
+        m:reset(w_init_xavier(m.nInputPlane * m.kH * m.kW, m.nOutputPlane * m.kH * m.kW))
+        -- m.weight:normal(0.0, 0.02)
+        m.bias:zero()
     elseif name:find('BatchNormalization') then
-       if m.weight then m.weight:normal(1.0, 0.02) end
-       if m.bias then m.bias:zero() end
+        if m.weight then m.weight:normal(1.0, 0.02) end
+        if m.bias then m.bias:zero() end
     end
  end
 
@@ -78,11 +85,13 @@ function DCGAN.discriminator()
     net:add(nn.SpatialBatchNormalization(32))
     net:add(nn.LeakyReLU(0.2, true))
     net:add(nn.SpatialAveragePooling(2, 2, 1, 1))
+    net:add(nn.SpatialDropout(0.5))
     --[[ DENSE 1 ]]--
     net:add(nn.View(-1):setNumInputDims(3)) -- flatten
     net:add(nn.Linear(9248, 256))
     net:add(nn.BatchNormalization(256))
     net:add(nn.LeakyReLU(0.2, true))
+    net:add(nn.Dropout(0.5))
     --[[ FINAL DENSE ]]--
     net:add(nn.Linear(256, 1))
     net:add(nn.Sigmoid())

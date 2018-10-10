@@ -30,6 +30,7 @@ cmd:option('-dlr', 0.001, 'learning rate for minimizing discriminator loss')
 cmd:option('-d_beta1', 0.5, 'value of `beta1` hyperparam for discriminator optimizer')
 cmd:option('-batch_size', 64, 'mini-batch size for training the adversarial network')
 cmd:option('-num_epochs', 50, 'number of epochs to train the adversarial network')
+cmd:option('-save_every', 5, 'epoch interval to save model checkpoints')
 cmd:option('-gpu', 1, 'if using GPU for training the adversarial network. Use 0 for CPU.')
 cmd:option('-name', 'dcgan', 'name of the adversarial networks')
 
@@ -98,49 +99,57 @@ optimStateG = {
 }
 optimStateD = {
     learningRate=opt.dlr,
-    beta1=opt.d_beta1
+    beta1=opt.d_beta1,
+    weightDecay=0.1
 }
 
 -- flatten model parameters
 local parametersG, gradParametersG = netG:getParameters()
 local parametersD, gradParametersD = netD:getParameters()
 
+-- define input placeholders
+input = torch.Tensor(opt.batch_size, trainset[1]:size(1), 
+                    trainset[1]:size(2), trainset[1]:size(3))
+noise = torch.Tensor(opt.batch_size, opt.z_dim)
+targets = torch.ones(opt.batch_size)
+
+local limit_index = trainset:size(1) - (trainset:size(1) % opt.batch_size) + 1
+
 -- training model
 for epoch = 1, opt.num_epochs do
-    local g_err = 0
-    local d_err = 0
-    local n_iter = 0
-    for t = 1, trainset:size(1), opt.batch_size do
+    local g_err, d_err, n_iter = 0, 0, 0
+    -- loop over batches
+    for t = 1, limit_index, opt.batch_size do
         -- disp progress bar
-        xlua.progress(t, trainset:size(1))
-
-        -- create mini-batch
-        local real_images
-        if opt.gpu > 0 then
-            real_images = trainset[{{t, math.min(t + opt.batch_size - 1, trainset:size(1))}}]:cuda()
-        else
-            real_images = trainset[{{t, math.min(t + opt.batch_size - 1, trainset:size(1))}}]
+        xlua.progress(t, limit_index)
+        -- break out of loop when we can't make batches of required size
+        if t == limit_index then
+            break
         end
-        local targets_real = torch.ones(real_images:size(1))
-        local targets_fake = torch.zeros(real_images:size(1))
+        -- create mini-batch
+        input:copy(trainset[{{t, t + opt.batch_size - 1}}])
 
         -- create closure to evaluate f(X) and df/dX of discriminator
         local fDx = function(x)
             gradParametersD:zero()
         
+            targets:fill(1)
             -- train with real
-            local output = netD:forward(real_images)                    -- network forward
-            local errD_real = criterion:forward(output, targets_real)   -- loss forward
-            local df_do = criterion:backward(output, targets_real)      -- loss backward
-            netD:backward(real_images, df_do)                           -- network backward
+            local output = netD:forward(input)                    -- network forward
+            local errD_real = criterion:forward(output, targets)   -- loss forward
+            local df_do = criterion:backward(output, targets)      -- loss backward
+            netD:backward(input, df_do)                           -- network backward
         
+            noise:normal(0.0, 1.0)
             -- train with fake
-            local input_noise = Utils.sample_noise_batch(real_images:size(1), opt.z_dim)
-            local generated = netG:forward(input_noise)
-            local output = netD:forward(generated)
-            local errD_fake = criterion:forward(output, targets_fake)
-            local df_do = criterion:backward(output, targets_fake)
-            netD:backward(generated, df_do)
+            local generated = netG:forward(noise)
+            input:copy(generated)
+
+            targets:fill(0)
+            local output = netD:forward(input)
+            local errD_fake = criterion:forward(output, targets)
+            local df_do = criterion:backward(output, targets)
+            netD:backward(input, df_do)
         
             errD = errD_real + errD_fake
             d_err = d_err + errD
@@ -151,25 +160,23 @@ for epoch = 1, opt.num_epochs do
         local fGx = function(x)
             gradParametersG:zero()
 
+            targets:fill(1)
             -- train to make fake seem like real
-            local input_noise = Utils.sample_noise_batch(real_images:size(1), opt.z_dim)
-            local generated = netG:forward(input_noise)
-            local output = netD:forward(generated)
-            local errG = criterion:forward(output, targets_real)
-            local df_do = criterion:backward(output, targets_real)
-            local df_dg = netD:updateGradInput(generated, df_do)
-            netG:backward(input_noise, df_dg)
+            -- use the output and generated from above to save on computation
+            local output = netD.output
+            local errG = criterion:forward(output, targets)
+            local df_do = criterion:backward(output, targets)
+            local df_dg = netD:updateGradInput(input, df_do)
+            netG:backward(input, df_dg)
 
-            g_err = g_err + errG        
+            g_err = g_err + errG
             return errG, gradParametersG
         end
 
         -- (1) Update D network: maximize log(D(x)) + log(1 - D(G(z)))
         optim.adam(fDx, parametersD, optimStateD)
-        -- (2) Update G network: maximize log(D(G(z))) -- twice so that d_loss does'nt go to 0
-        for i = 1, 2 do
-            optim.adam(fGx, parametersG, optimStateG)
-        end
+        -- (2) Update G network: maximize log(D(G(z)))
+        optim.adam(fGx, parametersG, optimStateG)
         n_iter = n_iter + 1
     end
     -- log epoch info
@@ -178,8 +185,11 @@ for epoch = 1, opt.num_epochs do
     parametersG, gradParametersG = nil, nil
     parametersD, gradParametersD = nil, nil
     -- save checkpoints
-    torch.save(path.join(CKPT_DIR, opt.name .. '_' .. epoch .. '_net_G.t7'), netG:clearState())
-    torch.save(path.join(CKPT_DIR, opt.name .. '_' .. epoch .. '_net_D.t7'), netD:clearState())
+    if epoch % opt.save_every == 0 then
+        print('saving checkpoints in `ckpts/`')
+        torch.save(path.join(CKPT_DIR, opt.name .. '_' .. epoch .. '_net_G.t7'), netG:clearState())
+        torch.save(path.join(CKPT_DIR, opt.name .. '_' .. epoch .. '_net_D.t7'), netD:clearState())
+    end
     -- reflatten the params and get them
     parametersG, gradParametersG = netG:getParameters()
     parametersD, gradParametersD = netD:getParameters()
