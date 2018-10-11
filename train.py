@@ -53,7 +53,7 @@ from utils import (
 @click.option(
     '-se',
     '--save-every',
-    default=1,
+    default=5,
     help='Epoch interval to save model checkpoints during training.'
 )
 @click.option(
@@ -129,7 +129,7 @@ def train(noise_dim, gen_lr, disc_lr, batch_size, num_epochs, save_every, tensor
             # Evaluating model after every epoch.
             d_loss_iter, g_loss_iter, eval_images = sess.run([d_loss, g_loss, g_out], 
                                                             feed_dict={real_data: eval_real_data,
-                                                                    noise: eval_noise})
+                                                                        noise: eval_noise})
             # Generate images using G and save in `out/`.
             tl.visualize.save_images(eval_images, [4, 4], 'out/eval_{}.png'.format(epoch + 1))
             logging.info('Epoch[{}/{}]    g_loss: {:.6f}   -   d_loss: {:.6f}'

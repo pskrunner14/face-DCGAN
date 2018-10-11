@@ -7,6 +7,7 @@ Usage: th train.lua --help ]]
 require 'torch'
 require 'nn'
 require 'optim'
+require 'image'
 
 -- local modules
 local Utils = paths.dofile('utils.lua')
@@ -25,9 +26,7 @@ cmd:text('Optional arguments:')
 
 cmd:option('-z_dim', 256, 'dimensions of 1-D noise tensor to feed the generator')
 cmd:option('-glr', 0.001, 'learning rate for minimizing generator loss')
-cmd:option('-g_beta1', 0.5, 'value of `beta1` hyperparam for generator optimizer')
 cmd:option('-dlr', 0.001, 'learning rate for minimizing discriminator loss')
-cmd:option('-d_beta1', 0.5, 'value of `beta1` hyperparam for discriminator optimizer')
 cmd:option('-batch_size', 64, 'mini-batch size for training the adversarial network')
 cmd:option('-num_epochs', 50, 'number of epochs to train the adversarial network')
 cmd:option('-save_every', 5, 'epoch interval to save model checkpoints')
@@ -68,8 +67,10 @@ trainset = Utils.load_dataset()
 if opt.gpu > 0 then
     require 'cutorch'
     require 'cunn'
+
     cutorch.setDevice(opt.gpu)
     torch.setdefaulttensortype('torch.CudaTensor')
+    
     if pcall(require, 'cudnn') then
         require 'cudnn'
         cudnn.benchmark = true
@@ -94,13 +95,10 @@ collectgarbage()
 
 -- define hyperparams for adam
 optimStateG = {
-    learningRate=opt.glr,
-    beta1=opt.g_beta1
+    learningRate=opt.glr
 }
 optimStateD = {
-    learningRate=opt.dlr,
-    beta1=opt.d_beta1,
-    weightDecay=0.1
+    learningRate=opt.dlr
 }
 
 -- flatten model parameters
@@ -141,11 +139,10 @@ for epoch = 1, opt.num_epochs do
             netD:backward(input, df_do)                           -- network backward
         
             noise:normal(0.0, 1.0)
+            targets:fill(0)
             -- train with fake
             local generated = netG:forward(noise)
             input:copy(generated)
-
-            targets:fill(0)
             local output = netD:forward(input)
             local errD_fake = criterion:forward(output, targets)
             local df_do = criterion:backward(output, targets)
@@ -170,13 +167,25 @@ for epoch = 1, opt.num_epochs do
             netG:backward(input, df_dg)
 
             g_err = g_err + errG
+
+            -- update inputs for next iteration
+            if first then
+                noise:normal(0.0, 1.0)
+                local generated = netG:forward(noise)
+                input:copy(generated)
+                netD:forward(input)
+            end
             return errG, gradParametersG
         end
 
         -- (1) Update D network: maximize log(D(x)) + log(1 - D(G(z)))
         optim.adam(fDx, parametersD, optimStateD)
         -- (2) Update G network: maximize log(D(G(z)))
-        optim.adam(fGx, parametersG, optimStateG)
+        first = true
+        for i = 1, 2 do
+            optim.adam(fGx, parametersG, optimStateG)
+            first = false
+        end
         n_iter = n_iter + 1
     end
     -- log epoch info

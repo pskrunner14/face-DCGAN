@@ -36,11 +36,9 @@ local function weights_init(m)
         if m.weight then m.weight:normal(1.0, 0.02) end
         if m.bias then m.bias:zero() end
     end
- end
+end
 
--- DCGAN Generator Network as described by
--- Radford et al. in "Unsupervised Representation Learning 
--- with Deep Convolutional Generative Adversarial Networks".
+-- DCGAN Generator Network (different from paper)
 function DCGAN.generator(z_dim)
     local net = nn.Sequential()
     --[[ DENSE 1 ]]--
@@ -70,9 +68,7 @@ function DCGAN.generator(z_dim)
     return net
 end
 
--- DCGAN Discriminator Network as described by
--- Radford et al. in "Unsupervised Representation Learning 
--- with Deep Convolutional Generative Adversarial Networks".
+-- DCGAN Discriminator Network (different from paper)
 function DCGAN.discriminator()
     local net = nn.Sequential()
     --[[ CONV 1 ]]--
